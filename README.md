@@ -1,17 +1,16 @@
-# mineOSHeartBeat
-A small application to detect if a Mincraft server(s) running on MineOS is down, and automatically restart it/them.
-
-Can monitor all present servers, a single server, or be run interactively.
+# mineOSplayerStats
+A small application track how many players are on a Mincraft server(s) running on MineOS, and generate usage reports via e-mail.
 
 ## Usage
 For help just run with -h
 
 ### Example
+?
 
-#### Single server w/ e-mail alerts
-	python mineos_monitor.py -c
-	python mineos_monitor.py -e -s ServerNameInMineOS 
+## Licence
+See Licence file
 
 ## Dependency's
 MineOS (http://minecraft.codeemo.com)
 Keyring (https://bitbucket.org/kang/python-keyring-lib) (included)
+Py-postgresql (http://python.projects.pgfoundry.org/) (included)
