@@ -9,6 +9,7 @@ import getpass
 import logging
 import argparse
 from time import sleep
+import subprocess
 
 
 sys.path.append(os.getcwd() + '/keyring')  # Strange path issue, only appears when run from local console, not IDE
@@ -19,6 +20,7 @@ import keyring
 from keyring.errors import PasswordDeleteError
 
 from mineos import mc
+
 
 __author__ = "Jesse S"
 __license__ = "GNU GPL v2.0"
@@ -125,6 +127,7 @@ class modes(object):  # Uses new style classes
         self.base_directory = base_directory
         self.sleep_delay = sleep_delay
         self.owner = owner  # We NEED to specify owner or we get a error in the webGUI during start/stop from there
+        logging.debug("Modes obj created" + str(self.base_directory) + '  ' + str(self.owner))
 
     def sleep(self):
         try:
@@ -158,7 +161,7 @@ class modes(object):  # Uses new style classes
 
         while True:
             for i in servers_to_monitor:
-                server_logger(server_name=i, owner=self.owner, base_directory=self.base_directory).check_server()
+                server_logger(server_name=i, owner=self.owner, base_directory=self.base_directory).check_server_status()
             self.sleep()
 
     def multi_server(self):
@@ -170,7 +173,7 @@ class modes(object):  # Uses new style classes
             logging.debug(server_list)
 
             for i in server_list:
-                server_logger(server_name=i, owner=self.owner, base_directory=self.base_directory).check_server()
+                server_logger(server_name=i, owner=self.owner, base_directory=self.base_directory).check_server_status()
             self.sleep()
 
     def single_server(self, server_name):
@@ -179,27 +182,28 @@ class modes(object):  # Uses new style classes
 
         while True:
             logging.debug(self.owner)
-            server_logger(server_name=server_name, owner=self.owner, base_directory=self.base_directory).check_server()
-            try:
-                pass
-            except RuntimeWarning:
-                print("Please enter a valid server name")
-                break
+            server_logger(server_name=server_name, owner=self.owner,
+                          base_directory=self.base_directory).check_server_status()
             self.sleep()
 
 
 class server_logger(mc):
-    def check_server(self):
-        logging.info("Checking server {0}".format(self.server_name))
-        logging.debug("Server {0} is {1}".format(self.server_name,
-                                                 ['Down', 'Up'][self.up]))
-
-        if self.up:
+    def check_server_status(self):
+        if self.up and self.ping[3] > 0:  # Server is up and has players
+            logging.info("Checking server {0}".format(self.server_name))
             self.send_active_players()
 
     def send_active_players(self):
-        logging.info("Checking Server: " + self.server_name)
-        logging.debug(str(self._base_directory) + '  ' + str(self.owner))
+        logging.debug(self.ping[3])
+        logging.debug(self.screen_pid)
+
+        # FIXME Command not working, but attaching to screen
+        proc = subprocess.Popen("screen -S "+str(self.screen_pid)+" -X 'stuff' \"list ",
+                                shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
+        logging.debug(proc.stdout.read())
+        proc.wait()
+
+
         # TODO Should send player list to db_helper.log_active_players_to_db
 
 
