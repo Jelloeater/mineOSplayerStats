@@ -194,14 +194,23 @@ class server_logger(mc):
             self.send_active_players()
 
     def send_active_players(self):
-        logging.debug(self.ping[3])
-        logging.debug(self.screen_pid)
+        logging.debug(self.ping[3])  # number of player
+        logging.debug('PID: ' + str(self.screen_pid))
 
         # FIXME Command not working, but attaching to screen
-        proc = subprocess.Popen("screen -S "+str(self.screen_pid)+" -X 'stuff' \"list ",
-                                shell=True, executable="/bin/bash", stdout=subprocess.PIPE)
-        logging.debug(proc.stdout.read())
-        proc.wait()
+        # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
+
+        # screen -S "+str(self.screen_pid)+" -X stuff "+"/say hi"+"\n"
+        cmd = 'ls'
+
+        process = subprocess.Popen(cmd, shell=True, executable="/bin/bash")
+        (output, err) = process.communicate()
+
+        logging.debug('Output: ' + str(output))
+        logging.debug('Err: ' + str(err))
+
+        status_code = process.wait()
+        logging.debug('Status Code: ' + str(status_code))
 
 
         # TODO Should send player list to db_helper.log_active_players_to_db
