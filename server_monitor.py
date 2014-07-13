@@ -6,16 +6,18 @@ import sys
 import os
 import json
 import getpass
-import smtplib
 import logging
 import argparse
 from time import sleep
 
 
 sys.path.append(os.getcwd() + '/keyring')  # Strange path issue, only appears when run from local console, not IDE
+sys.path.append(os.getcwd() + '/postgres')  # Strange path issue, only appears when run from local console, not IDE
+sys.path.append('/usr/games/minecraft')  # Strange path issue, only appears when run from local console, not IDE
 
 import keyring
 from keyring.errors import PasswordDeleteError
+
 from mineos import mc
 
 __author__ = "Jesse S"
