@@ -25,7 +25,6 @@ __license__ = "GNU GPL v2.0"
 __version__ = "1.0"
 __email__ = "jelloeater@gmail.com"
 
-BOOT_WAIT = 120
 LOG_FILENAME = "serverMonitor.log"
 
 
@@ -197,11 +196,6 @@ class server_logger(mc):
 
         if self.up:
             self.send_active_players()
-            try:
-                sleep(BOOT_WAIT)
-            except KeyboardInterrupt:
-                print("Someone is hasty. You should wait for the server to reboot next time.")
-                sys.exit(1)
 
     def send_active_players(self):
         logging.info("Checking Server: " + self.server_name)
