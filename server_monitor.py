@@ -196,19 +196,20 @@ class server_logger(mc):
     def send_active_players(self):
         logging.debug(self.ping[3])  # number of player
         logging.debug('PID: ' + str(self.screen_pid))
+        # self._command_stuff('/say lol')
 
         # FIXME Command not working, but attaching to screen
         # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
 
-        # screen -S "+str(self.screen_pid)+" -X stuff "+"/say hi"+"\n"
-        cmd = 'ls'
+        logging.debug(os.getcwd())
 
-        process = subprocess.Popen(cmd, shell=True, executable="/bin/bash")
+        cmd = 'screen -r ' + str(self.screen_pid) + ' -X /list'
+        # cmd = 'ls'
+        # os.system(cmd)
+        process = subprocess.Popen(cmd)
         (output, err) = process.communicate()
-
         logging.debug('Output: ' + str(output))
         logging.debug('Err: ' + str(err))
-
         status_code = process.wait()
         logging.debug('Status Code: ' + str(status_code))
 
