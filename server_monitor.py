@@ -101,6 +101,7 @@ def main():
 
     if args.remove_password_store:
         db_controller.db_helper().clear_password_store()
+
     if args.configure_db_settings:
         db_controller.db_helper().configure()
 
