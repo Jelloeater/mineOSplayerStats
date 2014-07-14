@@ -48,13 +48,12 @@ class SettingsHelper(db_settings):
 
 class DbConnectionManager(object, db_settings):
     def __init__(self):
-        username = db_settings.USERNAME
-        password = keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME)
-        ip_address = db_settings.DB_HOST
-        port = str(db_settings.PORT)
-        db_name = db_settings.DATABASE
         self.connection = pg8000.DBAPI.connect(
-            user=username, password=password, host=ip_address, port=port, database=db_name)
+            user=db_settings.USERNAME,
+            password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
+            host=db_settings.DB_HOST,
+            port=str(db_settings.PORT),
+            database=db_settings.DATABASE)
         self.cursor = self.connection.cursor()
 
     def __iter__(self):
