@@ -44,6 +44,34 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
+class DbConnectionManager(object, db_settings):
+    def __init__(self):
+        username = db_settings.USERNAME
+        password = keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME)
+        ip_address = db_settings.IP_ADDRESS
+        port = str(db_settings.PORT)
+        db_name = db_settings.DATABASE
+        self.conn = postgresql.open(
+            "pq://" + username + ":" + password + "@" + ip_address + ":" + port + "/" + db_name)
+        # self.conn.
+        self.cur = self.conn.cursor()
+
+    def __iter__(self):
+        for item in self.cur:
+            yield item
+
+    def __enter__(self):
+        return self.cur
+
+    def __exit__(self, ext_type, exc_value, traceback):
+        self.cur.close()
+        if isinstance(exc_value, Exception):
+            self.conn.rollback()
+        else:
+            self.conn.commit()
+        self.conn.close()
+
+
 class db_helper(object, SettingsHelper):
     """ Lets users send email messages """
     # db = postgresql.open(user = 'usename', database = 'datname', port = 5432)
@@ -66,17 +94,19 @@ class db_helper(object, SettingsHelper):
 
         # TODO Execute on first run
 
+    # noinspection PyMethodMayBeStatic
     def test_login(self):
         """ Gets run on startup """
-        with DbConnectionManager as c:
-            c('SELECT * FROM player_activity')
 
-        # try:
-        #     with DbConnectionManager as c:
-        #         c('SELECT * FROM player_activity')
-        # except:
-        #     print("DB Access Error")
-        #     sys.exit(1)
+
+            # c('SELECT * FROM player_activity')
+
+            # try:
+            # with DbConnectionManager as c:
+            #         c('SELECT * FROM player_activity')
+            # except:
+            #     print("DB Access Error")
+            #     sys.exit(1)
 
 
     def log_active_players_to_db(self, players_list):
@@ -121,28 +151,3 @@ class db_helper(object, SettingsHelper):
             logging.error("Password cannot be deleted or already has been removed")
 
 
-class DbConnectionManager(object, db_settings):
-    def __init__(self):
-        username = db_settings.USERNAME
-        password = keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME)
-        ip_address = db_settings.IP_ADDRESS
-        port = str(db_settings.PORT)
-        db_name = db_settings.DATABASE
-        self.conn = postgresql.open(
-            "pq://" + username + ":" + password + "@" + ip_address + ":" + port + "/" + db_name)
-        self.cur = self.conn.cursor()
-
-    def __iter__(self):
-        for item in self.cur:
-            yield item
-
-    def __enter__(self):
-        return self.cur
-
-    def __exit__(self, ext_type, exc_value, traceback):
-        self.cur.close()
-        if isinstance(exc_value, Exception):
-            self.conn.rollback()
-        else:
-            self.conn.commit()
-        self.conn.close()
