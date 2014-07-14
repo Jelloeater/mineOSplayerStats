@@ -29,9 +29,6 @@
 
 __author__ = "Mathieu Fenniak"
 
-import dbapi as DBAPI
-pg8000_dbapi = DBAPI
+from pg8000 import Interval, Bytea, utc
 
-from interface import *
-from types import Bytea
-
+__all__ = [Interval, Bytea, utc]

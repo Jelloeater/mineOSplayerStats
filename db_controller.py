@@ -103,13 +103,24 @@ class db_helper(object, SettingsHelper):
         # with DbConnectionManager as cur:
         # cur.execute('SELECT * FROM player_activity')
 
+        logging.debug(datetime.datetime.today())
 
         connection = pg8000.DBAPI.connect(
             user='postgres', password='test', host='192.168.1.165', database='player_stats')
         cursor = connection.cursor()
-        cursor.execute('INSERT INTO player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES (?, ?, ?);'),(datetime.datetime.today(),4,'jelloeater, Kalgaren')
-        cursor.execute('SELECT * FROM player_activity')
+        # "INSERT INTO test_table (field) VALUES (%s), ("Ender's Game", "Speaker for the Dead"))"
+        cursor.execute("INSERT INTO public.test_table (field) VALUES (?)", ('Cats are great',))
+        cursor.execute("SELECT * FROM test_table")
         print(cursor.fetchall())
+
+        # INSERT INTO public.player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES ('2014-07-13 21:03:59.0', 2, 'jelloeater');
+
+
+        # cursor.execute('INSERT INTO player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES (?, ?, ?);'), ('2014-07-13 21:03:59.0', 2, 'jelloeater')
+
+
+        # FIXME Get insert statement working
+
 
 
         # try:
