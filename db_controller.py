@@ -21,7 +21,7 @@ class db_settings():
     # Password should be stored with keyring
     DB_HOST = '127.0.0.1'
     PORT = 5432
-    DATABASE = 'template1'
+    DATABASE = 'player_stats'
 
 
 class SettingsHelper(db_settings):
@@ -72,8 +72,8 @@ class DbConnectionManager(object, db_settings):
         # if isinstance(exc_value, Exception):
         # self.connection.rollback()
         # else:
-        #         self.connection.commit()
-        #     self.connection.close()
+        # self.connection.commit()
+        # self.connection.close()
 
 
 class db_helper(object, SettingsHelper):
@@ -86,14 +86,22 @@ class db_helper(object, SettingsHelper):
         self.loadSettings()
         self.PASSWORD = keyring.get_password(self.KEYRING_APP_ID, self.USERNAME)  # Loads password from secure storage
 
-
-    def __create_database(self):
-        connection = pg8000.DBAPI.connect(
-            user=self.USERNAME, password=self.PASSWORD, host=self.DB_HOST, database='template1')
-        cursor = connection.cursor()
-        connection.autocommit = True
-        cursor.execute('''CREATE DATABASE player_stats''')
-        connection.close()
+    def _create_database(self):
+        """ Creates the database using template1 """
+        try:
+            try:
+                logging.info("Check if Database Exists")
+                connection = pg8000.DBAPI.connect(
+                    user=self.USERNAME, password=self.PASSWORD, host=self.DB_HOST, database='template1')
+                cursor = connection.cursor()
+                connection.autocommit = True
+                cursor.execute('''CREATE DATABASE player_stats''')
+                connection.close()
+            except errors.ProgrammingError:
+                logging.info('Database (Player_Stats) Already Exists')
+        except pg8000.errors.InterfaceError:
+            logging.error("DB Connection Interface Error")
+            print('Please check the user settings')
 
     def __create_table(self):
         DDL_Query = '''
@@ -117,19 +125,15 @@ class db_helper(object, SettingsHelper):
         logging.debug(datetime.datetime.today())
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
 
-        try:
-            self.__create_database()
-        except pg8000.errors.InterfaceError:
-            logging.error("DB Connection Interface Error")
-            print('Please check the user settings')
+
 
         # connection = pg8000.DBAPI.connect(
-        #     user='postgres', password='test', host='192.168.1.165', database='player_stats')
+        # user='postgres', password='test', host='192.168.1.165', database='player_stats')
         # cursor = connection.cursor()
         #
         #
         # cursor.execute('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
-        #                'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
+        # 'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
         # connection.commit()
 
         # with DbConnectionManager as conn:
@@ -166,21 +170,15 @@ class db_helper(object, SettingsHelper):
         if password:
             keyring.set_password(self.KEYRING_APP_ID, self.USERNAME, password)
 
-        print("Enter database server IP Address to edit (127.0.0.1) or press enter to skip")
-        ip_address = raw_input('({0})>'.format(self.DB_HOST))
-        if username:
-            db_settings.DB_HOST = ip_address
+        print("Enter database server HOST Address to edit (127.0.0.1) or press enter to skip")
+        DB_HOST = raw_input('({0})>'.format(self.DB_HOST))
+        if DB_HOST:
+            db_settings.DB_HOST = DB_HOST
 
         print("Enter database server port to edit (playerStats) or press enter to skip")
         port = raw_input('({0})>'.format(str(self.PORT)))
-        if username:
+        if port:
             db_settings.PORT = int(port)
-
-        # print("Enter database name to edit (playerStats) or press enter to skip")
-        # database = raw_input('({0})>'.format(self.DATABASE))
-        # if username:
-        #     db_settings.DATABASE = database
-
         self.saveSettings()
 
         print("Settings Updated")
