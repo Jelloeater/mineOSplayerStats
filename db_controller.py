@@ -69,8 +69,8 @@ class DbConnectionManager(object, db_settings):
         # def __exit__(self, ext_type, exc_value, traceback):
         # self.cursor.close()
         # if isinstance(exc_value, Exception):
-        #         self.connection.rollback()
-        #     else:
+        # self.connection.rollback()
+        # else:
         #         self.connection.commit()
         #     self.connection.close()
 
@@ -91,8 +91,9 @@ class db_helper(object, SettingsHelper):
         "Index" SERIAL NOT NULL,
         "Time_Stamp" TIMESTAMP(6) NOT NULL,
         "Player_Count" INT4,
-        "Player_Names" TEXT, CONSTRAINT
-        "player_activity_pkey"
+        "Player_Names" TEXT,
+        "Server_Name" TEXT,
+        CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
 
         # TODO Execute on first run
@@ -111,17 +112,18 @@ class db_helper(object, SettingsHelper):
         cursor = connection.cursor()
 
 
-        cursor.execute("CREATE TABLE book (id SERIAL, title TEXT)")
-        cursor.execute(
-                 "INSERT INTO book (title) VALUES (%s), (%s) RETURNING id, title",
-                        ("Ender's Game", "Speaker for the Dead"))
+
+        # cursor.execute("INSERT INTO book (title,author) "
+        # "VALUES (%s,%s)", ("Ender's Game","Author"))
+        # connection.commit()
+
+
+        # print(cursor.fetchall())
+
+
+        cursor.execute('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
+                       'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 8, 'jelloeater', 'forgeLand'))
         connection.commit()
-
-
-        print(cursor.fetchall())
-
-
-        # cursor.execute('INSERT INTO player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES (?, ?, ?);'), ('2014-07-13 21:03:59.0', 2, 'jelloeater')
 
 
         # FIXME Get insert statement working
@@ -130,7 +132,7 @@ class db_helper(object, SettingsHelper):
 
         # try:
         # with DbConnectionManager as c:
-        #         c('SELECT * FROM player_activity')
+        # c('SELECT * FROM player_activity')
         # except:
         #     print("DB Access Error")
         #     sys.exit(1)
