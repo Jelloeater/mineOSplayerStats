@@ -3,10 +3,11 @@ import os
 import sys
 import json
 import getpass
+import datetime
 
 sys.path.append(os.getcwd() + '/keyring')  # Strange path issue, only appears when run from local console, not IDE
-sys.path.append(os.getcwd() + '/postgres')  # Strange path issue, only appears when run from local console, not IDE
-import postgresql
+sys.path.append(os.getcwd() + '/pg8000-1.08')  # Strange path issue, only appears when run from local console, not IDE
+import pg8000
 import keyring
 from keyring.errors import PasswordDeleteError
 
@@ -51,25 +52,27 @@ class DbConnectionManager(object, db_settings):
         ip_address = db_settings.IP_ADDRESS
         port = str(db_settings.PORT)
         db_name = db_settings.DATABASE
-        self.conn = postgresql.open(
-            "pq://" + username + ":" + password + "@" + ip_address + ":" + port + "/" + db_name)
-        # self.conn.
-        self.cur = self.conn.cursor()
+        self.connection = pg8000.DBAPI.connect(
+            user=username, password=password, host=ip_address, port=port, database=db_name)
+        self.cursor = self.connection.cursor()
 
     def __iter__(self):
-        for item in self.cur:
+        for item in self.cursor:
             yield item
 
     def __enter__(self):
-        return self.cur
+        return self.cursor
 
-    def __exit__(self, ext_type, exc_value, traceback):
-        self.cur.close()
-        if isinstance(exc_value, Exception):
-            self.conn.rollback()
-        else:
-            self.conn.commit()
-        self.conn.close()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        print('exit')
+
+        # def __exit__(self, ext_type, exc_value, traceback):
+        # self.cursor.close()
+        #     if isinstance(exc_value, Exception):
+        #         self.connection.rollback()
+        #     else:
+        #         self.connection.commit()
+        #     self.connection.close()
 
 
 class db_helper(object, SettingsHelper):
@@ -97,20 +100,29 @@ class db_helper(object, SettingsHelper):
     # noinspection PyMethodMayBeStatic
     def test_login(self):
         """ Gets run on startup """
+        # with DbConnectionManager as cur:
+        # cur.execute('SELECT * FROM player_activity')
 
 
-            # c('SELECT * FROM player_activity')
+        connection = pg8000.DBAPI.connect(
+            user='postgres', password='test', host='192.168.1.165', database='player_stats')
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES (?, ?, ?);'),(datetime.datetime.today(),4,'jelloeater, Kalgaren')
+        cursor.execute('SELECT * FROM player_activity')
+        print(cursor.fetchall())
 
-            # try:
-            # with DbConnectionManager as c:
-            #         c('SELECT * FROM player_activity')
-            # except:
-            #     print("DB Access Error")
-            #     sys.exit(1)
+
+        # try:
+        #     with DbConnectionManager as c:
+        #         c('SELECT * FROM player_activity')
+        # except:
+        #     print("DB Access Error")
+        #     sys.exit(1)
 
 
     def log_active_players_to_db(self, players_list):
         """ Takes active players and logs list to db with timestamp """
+
         pass
 
     def configure(self):
