@@ -16,11 +16,11 @@ __author__ = 'Jesse'
 
 class db_settings():
     """ Container class for load/save """
-    USERNAME = ''
+    USERNAME = 'postgres'
     # Password should be stored with keyring
-    IP_ADDRESS = ''
+    IP_ADDRESS = '127.0.0.1'
     PORT = 5432
-    DATABASE = ''
+    DATABASE = 'template1'
 
 
 class SettingsHelper(db_settings):
@@ -85,9 +85,19 @@ class db_helper(object, SettingsHelper):
         self.loadSettings()
         self.PASSWORD = keyring.get_password(self.KEYRING_APP_ID, self.USERNAME)  # Loads password from secure storage
 
+
+    def __create_database(self):
+        DDL_Query = '''CREATE DATABASE player_stats'''
+
+        # connection = pg8000.DBAPI.connect(
+        #     user='postgres', password='test', host='192.168.1.165', database='template1')
+        # cursor = connection.cursor()
+        # connection.autocommit = True
+        # cursor.execute('''CREATE DATABASE player_stats''')
+
     def __create_table(self):
         DDL_Query = '''
-        CREATE TABLE "public"."player_activity" (
+        CREATE TABLE player_activity (
         "Index" SERIAL NOT NULL,
         "Time_Stamp" TIMESTAMP(6) NOT NULL,
         "Player_Count" INT4,
@@ -108,21 +118,11 @@ class db_helper(object, SettingsHelper):
 
         connection = pg8000.DBAPI.connect(
             user='postgres', password='test', host='192.168.1.165', database='player_stats')
-
         cursor = connection.cursor()
 
 
-
-        # cursor.execute("INSERT INTO book (title,author) "
-        # "VALUES (%s,%s)", ("Ender's Game","Author"))
-        # connection.commit()
-
-
-        # print(cursor.fetchall())
-
-
         cursor.execute('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
-                       'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 8, 'jelloeater', 'forgeLand'))
+                       'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
         connection.commit()
 
 
