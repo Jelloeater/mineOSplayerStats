@@ -68,7 +68,7 @@ class DbConnectionManager(object, db_settings):
 
         # def __exit__(self, ext_type, exc_value, traceback):
         # self.cursor.close()
-        #     if isinstance(exc_value, Exception):
+        # if isinstance(exc_value, Exception):
         #         self.connection.rollback()
         #     else:
         #         self.connection.commit()
@@ -107,13 +107,18 @@ class db_helper(object, SettingsHelper):
 
         connection = pg8000.DBAPI.connect(
             user='postgres', password='test', host='192.168.1.165', database='player_stats')
-        cursor = connection.cursor()
-        # "INSERT INTO test_table (field) VALUES (%s), ("Ender's Game", "Speaker for the Dead"))"
-        cursor.execute("INSERT INTO public.test_table (field) VALUES (?)", ('Cats are great',))
-        cursor.execute("SELECT * FROM test_table")
-        print(cursor.fetchall())
 
-        # INSERT INTO public.player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES ('2014-07-13 21:03:59.0', 2, 'jelloeater');
+        cursor = connection.cursor()
+
+
+        cursor.execute("CREATE TABLE book (id SERIAL, title TEXT)")
+        cursor.execute(
+                 "INSERT INTO book (title) VALUES (%s), (%s) RETURNING id, title",
+                        ("Ender's Game", "Speaker for the Dead"))
+        connection.commit()
+
+
+        print(cursor.fetchall())
 
 
         # cursor.execute('INSERT INTO player_activity ("Time_Stamp", "Player_Count", "Player_Names") VALUES (?, ?, ?);'), ('2014-07-13 21:03:59.0', 2, 'jelloeater')
@@ -124,7 +129,7 @@ class db_helper(object, SettingsHelper):
 
 
         # try:
-        #     with DbConnectionManager as c:
+        # with DbConnectionManager as c:
         #         c('SELECT * FROM player_activity')
         # except:
         #     print("DB Access Error")
