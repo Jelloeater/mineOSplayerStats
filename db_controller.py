@@ -46,40 +46,53 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
-class DBConnection(object):
-    def __init__(self, context):
-        pass
-
-
-    def __del__(self):
-        print 'WithinContext.__del__'
-
-
-class DbConnectionManager(object):
-
+class db_access(object):
     @staticmethod
-    def get_db_objs(self):
-        self.connection = pg8000.DBAPI.connect(
+    def open():
+        """ Returns connection & cursor"""
+        connection = pg8000.DBAPI.connect(
             user=db_settings.USERNAME,
             password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
             host=db_settings.DB_HOST,
-            port=str(db_settings.PORT),
+            port=db_settings.PORT,
             database=db_settings.DATABASE)
-        self.cursor = self.connection.cursor()
-        return self.connection.cursor
+        cursor = connection.cursor()
+        return connection, cursor
 
-    def __enter__(self):
-
-        return self.get_db_objs(self)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cursor.close()
-        if isinstance(exc_val, Exception):
-            self.connection.rollback()
+    @staticmethod
+    def close(connection, cursor):
+        try:
+            cursor.close()
+        except:
+            connection.rollback()
+            logging.warning('Rollback')
         else:
-            self.connection.commit()
-            self.connection.close()
-            logging.debug('Closed DB Connection')
+            connection.commit()
+    logging.debug('Closed DB Connection')
+
+    @staticmethod
+    def write_to_db(query):
+        connection, cursor = db_access.open()
+        try:
+            try:
+                cursor.execute(query)
+            finally:
+                cursor.close()
+        except:
+            connection.rollback()
+            raise
+        else:
+            connection.commit()
+
+    @staticmethod
+    def read_from_db(query):
+        connection, cursor = db_access.open()
+        try:
+            cursor.execute(query)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
+
 
 
 class db_helper(object, SettingsHelper):
@@ -131,14 +144,12 @@ class db_helper(object, SettingsHelper):
         logging.debug(datetime.datetime.today())
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
 
+
+
+        # print(db_access.read_from_db('SELECT * FROM player_activity'))
         insert_query = 'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") \
-                        VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm')
-
-        with DbConnectionManager as conn:
-            conn.execute(insert_query)
-            conn.execute('SELECT * FROM player_activity')
-            logging.debug(conn.fetchall())
-
+                        VALUES (%s, %s, %s,%s)'
+        db_access.write_to_db(insert_query), (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm')
 
 
 
@@ -161,7 +172,7 @@ class db_helper(object, SettingsHelper):
             # c('SELECT * FROM player_activity')
             # except:
             # print("DB Access Error")
-            #     sys.exit(1)
+            # sys.exit(1)
 
 
     def log_active_players_to_db(self, players_list):
