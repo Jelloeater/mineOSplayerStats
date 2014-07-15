@@ -46,33 +46,7 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
-class DbConnectionManager(object, db_settings):
-    def __init__(self):
-        self.connection = pg8000.DBAPI.connect(
-            user=db_settings.USERNAME,
-            password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
-            host=db_settings.DB_HOST,
-            port=str(db_settings.PORT),
-            database=db_settings.DATABASE)
-        self.cursor = self.connection.cursor()
 
-    def __iter__(self):
-        for item in self.cursor:
-            yield item
-
-    def __enter__(self):
-        return self.cursor
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        print('exit')
-
-        # def __exit__(self, ext_type, exc_value, traceback):
-        # self.cursor.close()
-        # if isinstance(exc_value, Exception):
-        # self.connection.rollback()
-        # else:
-        # self.connection.commit()
-        # self.connection.close()
 
 
 class db_helper(object, SettingsHelper):
@@ -118,11 +92,23 @@ class db_helper(object, SettingsHelper):
     # noinspection PyMethodMayBeStatic
     def test_login(self):
         """ Gets run on startup """
-        # with DbConnectionManager as cur:
-        # cur.execute('SELECT * FROM player_activity')
         logging.debug(db_settings.__dict__)
         logging.debug(datetime.datetime.today())
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
+
+        # self._create_database()
+
+
+
+
+
+        db_access.write_to_db('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
+                              'VALUES (%s, %s, %s,%s)'), (datetime.datetime.now(), 24, 'jelloeater', 'MagicFarm')
+
+        x = db_access.read_from_db('SELECT * FROM player_activity')
+        print(x)
+        logging.info(x)
+
 
 
 
@@ -135,20 +121,6 @@ class db_helper(object, SettingsHelper):
         # 'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
         # connection.commit()
 
-        # with DbConnectionManager as conn:
-        #     conn.execute('SELECT * FROM player_activity')
-        #     logging.debug(conn.fetchall())
-
-        # FIXME Get insert statement working
-
-
-
-        # try:
-        # with DbConnectionManager as c:
-        # c('SELECT * FROM player_activity')
-        # except:
-        #     print("DB Access Error")
-        #     sys.exit(1)
 
 
     def log_active_players_to_db(self, players_list):
@@ -191,3 +163,51 @@ class db_helper(object, SettingsHelper):
             logging.error("Password cannot be deleted or already has been removed")
 
         sys.exit(0)
+
+
+class db_access(object):
+    @staticmethod
+    def open():
+        """ Returns connection & cursor"""
+        connection = pg8000.DBAPI.connect(
+            user=db_settings.USERNAME,
+            password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
+            host=db_settings.DB_HOST,
+            port=db_settings.PORT,
+            database=db_settings.DATABASE)
+        cursor = connection.cursor()
+        return connection, cursor
+
+    @staticmethod
+    def close(connection, cursor):
+        try:
+            cursor.close()
+        except:
+            connection.rollback()
+            logging.warning('Rollback')
+        else:
+            connection.commit()
+    logging.debug('Closed DB Connection')
+
+    @staticmethod
+    def write_to_db(query):
+        connection, cursor = db_access.open()
+        try:
+            try:
+                cursor.execute(query)
+            finally:
+                cursor.close()
+        except:
+            connection.rollback()
+            raise
+        else:
+            connection.commit()
+
+    @staticmethod
+    def read_from_db(query):
+        connection, cursor = db_access.open()
+        try:
+            cursor.execute(query)
+            return cursor.fetchall()
+        finally:
+            cursor.close()
