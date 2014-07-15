@@ -46,8 +46,19 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
-class DbConnectionManager(object, db_settings):
-    def __init__(self):
+class DBConnection(object):
+    def __init__(self, context):
+        pass
+
+
+    def __del__(self):
+        print 'WithinContext.__del__'
+
+
+class DbConnectionManager(object):
+
+    @staticmethod
+    def get_db_objs(self):
         self.connection = pg8000.DBAPI.connect(
             user=db_settings.USERNAME,
             password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
@@ -55,24 +66,20 @@ class DbConnectionManager(object, db_settings):
             port=str(db_settings.PORT),
             database=db_settings.DATABASE)
         self.cursor = self.connection.cursor()
-
-    def __iter__(self):
-        for item in self.cursor:
-            yield item
+        return self.connection.cursor
 
     def __enter__(self):
-        return self.cursor
+
+        return self.get_db_objs(self)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print('exit')
-
-        # def __exit__(self, ext_type, exc_value, traceback):
-        # self.cursor.close()
-        # if isinstance(exc_value, Exception):
-        # self.connection.rollback()
-        # else:
-        # self.connection.commit()
-        # self.connection.close()
+        self.cursor.close()
+        if isinstance(exc_val, Exception):
+            self.connection.rollback()
+        else:
+            self.connection.commit()
+            self.connection.close()
+            logging.debug('Closed DB Connection')
 
 
 class db_helper(object, SettingsHelper):
@@ -118,37 +125,43 @@ class db_helper(object, SettingsHelper):
     # noinspection PyMethodMayBeStatic
     def test_login(self):
         """ Gets run on startup """
-        # with DbConnectionManager as cur:
+        # with DbConnectionManager as cur
         # cur.execute('SELECT * FROM player_activity')
         logging.debug(db_settings.__dict__)
         logging.debug(datetime.datetime.today())
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
 
+        insert_query = 'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") \
+                        VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm')
 
-
-        # connection = pg8000.DBAPI.connect(
-        # user='postgres', password='test', host='192.168.1.165', database='player_stats')
-        # cursor = connection.cursor()
-        #
-        #
-        # cursor.execute('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
-        # 'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
-        # connection.commit()
-
-        # with DbConnectionManager as conn:
-        #     conn.execute('SELECT * FROM player_activity')
-        #     logging.debug(conn.fetchall())
-
-        # FIXME Get insert statement working
+        with DbConnectionManager as conn:
+            conn.execute(insert_query)
+            conn.execute('SELECT * FROM player_activity')
+            logging.debug(conn.fetchall())
 
 
 
-        # try:
-        # with DbConnectionManager as c:
-        # c('SELECT * FROM player_activity')
-        # except:
-        #     print("DB Access Error")
-        #     sys.exit(1)
+
+            # connection = pg8000.DBAPI.connect(
+            # user='postgres', password='test', host='192.168.1.165', database='player_stats')
+            # cursor = connection.cursor()
+            #
+            #
+
+            # connection.commit()
+
+
+
+            # FIXME Get insert statement working
+
+
+
+            # try:
+            # with DbConnectionManager as c:
+            # c('SELECT * FROM player_activity')
+            # except:
+            # print("DB Access Error")
+            #     sys.exit(1)
 
 
     def log_active_players_to_db(self, players_list):
