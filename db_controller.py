@@ -123,6 +123,7 @@ class db_helper(object, SettingsHelper):
             print('Please check the user settings')
 
     def __create_table(self):
+
         DDL_Query = '''
         CREATE TABLE player_activity (
         "Index" SERIAL NOT NULL,
@@ -132,6 +133,7 @@ class db_helper(object, SettingsHelper):
         "Server_Name" TEXT,
         CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
+        db_access.write_to_db(DDL_Query)
 
         # TODO Execute on first run
 
@@ -145,11 +147,15 @@ class db_helper(object, SettingsHelper):
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
 
 
+        self.__create_table()
+
 
         # print(db_access.read_from_db('SELECT * FROM player_activity'))
-        insert_query = 'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") \
-                        VALUES (%s, %s, %s,%s)'
-        db_access.write_to_db(insert_query), (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm')
+
+
+        # insert_query = 'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") \
+        #                 VALUES (%s, %s, %s,%s)'
+        # db_access.write_to_db(insert_query), (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm')
 
 
 
