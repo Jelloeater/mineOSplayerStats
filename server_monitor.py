@@ -2,7 +2,6 @@
 """A python project for managing Minecraft servers hosted on MineOS (http://minecraft.codeemo.com)
 """
 from datetime import datetime
-
 import sys
 import os
 import logging
@@ -185,8 +184,8 @@ class modes(object):  # Uses new style classes
 
 class server_logger(mc):
     def check_server_status(self):
+        logging.info("Checking server {0}".format(self.server_name))
         if self.up and self.ping[3] > 0:  # Server is up and has players
-            logging.info("Checking server {0}".format(self.server_name))
             self.log_active_players_to_db()
 
     def log_active_players_to_db(self):
@@ -196,8 +195,17 @@ class server_logger(mc):
 
         # FIXME Command not working, but attaching to screen
         # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
-        players_list =[]
 
+        players_list = self.get_player_list()
+
+        # conn, cur = db_controller.db_access().open_connection()
+        # cur.execute(
+        #     'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
+        #     (datetime.datetime.now(), self.ping[3], players_list, self.server_name))
+        # db_controller.db_access.close_connection(conn, cur)
+
+    def get_player_list(self):
+        players_list = []
         logging.debug(os.getcwd())
 
         cmd = 'screen -r ' + str(self.screen_pid) + ' -X /list'
@@ -209,14 +217,7 @@ class server_logger(mc):
         logging.debug('Err: ' + str(err))
         status_code = process.wait()
         logging.debug('Status Code: ' + str(status_code))
-
-        conn, cur = db_controller.db_access().open_connection()
-        cur.execute(
-            'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
-            (datetime.datetime.now(), self.ping[3], players_list, self.server_name))
-        db_controller.db_access.close_connection(conn, cur)
-
-
+        return players_list
 
 
 if __name__ == "__main__":
