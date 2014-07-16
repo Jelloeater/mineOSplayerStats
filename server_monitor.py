@@ -108,7 +108,6 @@ def main():
         db_controller.db_helper().configure()
 
     db_controller.db_helper().test_db_setup()
-    # Calling constructor also loads settings, needed by db_access, so unless we want to refactor, it needs to stay.
 
     # Magic starts here
     if args.interactive:
@@ -211,7 +210,7 @@ class server_logger(mc):
         status_code = process.wait()
         logging.debug('Status Code: ' + str(status_code))
 
-        conn, cur = db_controller.db_access.open_connection()
+        conn, cur = db_controller.db_access().open_connection()
         cur.execute(
             'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
             (datetime.datetime.now(), self.ping[3], players_list, self.server_name))

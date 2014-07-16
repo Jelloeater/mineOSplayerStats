@@ -45,15 +45,42 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
-class db_helper(object, SettingsHelper):
+class db_access(SettingsHelper, object):
+    def __init__(self):
+        self.loadSettings()
+        self.PASSWORD = keyring.get_password(self.KEYRING_APP_ID, self.USERNAME)  # Loads password from secure storage
+
+    def open_connection(self):
+        """ Returns connection & cursor"""
+        connection = pg8000.DBAPI.connect(
+            user=self.USERNAME,
+            password=self.PASSWORD,
+            host=self.DB_HOST,
+            port=self.PORT,
+            database=self.DATABASE)
+        cursor = connection.cursor()
+        return connection, cursor
+
+    @staticmethod
+    def close_connection(connection, cursor):
+        try:
+            cursor.close()
+        except pg8000.errors.ProgrammingError:
+            connection.rollback()
+            logging.warning('Rollback')
+        else:
+            connection.commit()
+        logging.debug('Closed DB Connection')
+
+
+class db_helper(db_access):
     """ Lets users send email messages """
     # db = postgresql.open(user = 'usename', database = 'datname', port = 5432)
     # http://python.projects.pgfoundry.org/docs/1.1/
 
     # TODO Maybe implement other mail providers
     def __init__(self):
-        self.loadSettings()
-        self.PASSWORD = keyring.get_password(self.KEYRING_APP_ID, self.USERNAME)  # Loads password from secure storage
+        super(db_helper, self).__init__()
 
     def __create_database(self):
         """ Creates the database using template1 """
@@ -73,8 +100,8 @@ class db_helper(object, SettingsHelper):
             logging.error("DB Connection Interface Error")
             print('Please check the user settings')
 
-    @staticmethod
-    def __create_table():
+
+    def __create_table(self):
         logging.warning('Creating player_activity table')
         DDL_Query = '''
         CREATE TABLE player_activity (
@@ -85,7 +112,7 @@ class db_helper(object, SettingsHelper):
         "Server_Name" TEXT,
         CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
-        conn, cur = db_access.open_connection()
+        conn, cur = self.open_connection()
         try:
             cur.execute(DDL_Query)
         except pg8000.errors.ProgrammingError:
@@ -101,7 +128,7 @@ class db_helper(object, SettingsHelper):
                       keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
         try:
             logging.info('Testing Database Connection')
-            conn, cur = db_access.open_connection()
+            conn, cur = self.open_connection()
             try:
                 cur.execute('SELECT * FROM player_activity')
                 db_access.close_connection(conn, cur)
@@ -158,26 +185,4 @@ class db_helper(object, SettingsHelper):
         sys.exit(0)
 
 
-class db_access(object, db_helper):
-    @staticmethod
-    def open_connection():
-        """ Returns connection & cursor"""
-        connection = pg8000.DBAPI.connect(
-            user=db_settings.USERNAME,
-            password=keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME),
-            host=db_settings.DB_HOST,
-            port=db_settings.PORT,
-            database=db_settings.DATABASE)
-        cursor = connection.cursor()
-        return connection, cursor
 
-    @staticmethod
-    def close_connection(connection, cursor):
-        try:
-            cursor.close()
-        except pg8000.errors.ProgrammingError:
-            connection.rollback()
-            logging.warning('Rollback')
-        else:
-            connection.commit()
-        logging.debug('Closed DB Connection')
