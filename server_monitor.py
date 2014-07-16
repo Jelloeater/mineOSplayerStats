@@ -208,15 +208,22 @@ class server_logger(mc):
         players_list = []
         logging.debug(os.getcwd())
 
-        cmd = 'screen -r ' + str(self.screen_pid) + ' -X /list'
+        cmd = 'screen -d -m -r ' + str(self.screen_pid) + ' "/list"'  # Breaks screen on exit, stuck in loop
         # cmd = 'ls'
+        logging.debug(subprocess.check_output(cmd))
+        cmd_exit = 'screen detach'
+
+        subprocess.check_output(cmd_exit)
+
         # os.system(cmd)
-        process = subprocess.Popen(cmd)
-        (output, err) = process.communicate()
-        logging.debug('Output: ' + str(output))
-        logging.debug('Err: ' + str(err))
-        status_code = process.wait()
-        logging.debug('Status Code: ' + str(status_code))
+        # process = subprocess.Popen(cmd)
+        # (output, err) = process.communicate()
+        # logging.debug('Output: ' + str(output))
+        # logging.debug('Err: ' + str(err))
+        # status_code = process.wait()
+        # logging.debug('Status Code: ' + str(status_code))
+        # process.wait(5)
+
         return players_list
 
 
