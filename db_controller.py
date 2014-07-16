@@ -3,7 +3,6 @@ import os
 import sys
 import json
 import getpass
-import datetime
 
 sys.path.append(os.getcwd() + '/keyring')  # Strange path issue, only appears when run from local console, not IDE
 sys.path.append(os.getcwd() + '/pg8000-1.08')  # Strange path issue, only appears when run from local console, not IDE
@@ -123,15 +122,6 @@ class db_helper(object, SettingsHelper):
                 sys.exit(1)
 
 
-    @staticmethod
-    def log_active_players_to_db(players_list, server_name):
-        """ Takes active players and logs list to db with timestamp """
-        conn, cur = db_access.open_connection()
-        cur.execute(
-            'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
-            (datetime.datetime.now(), len(players_list), players_list, server_name))
-        db_access.close_connection(conn, cur)
-
     def configure(self):
         print("Enter database username (postgres) or press enter to skip")
         username = raw_input('({0})>'.format(self.USERNAME))
@@ -168,7 +158,7 @@ class db_helper(object, SettingsHelper):
         sys.exit(0)
 
 
-class db_access(object):
+class db_access(object, db_helper):
     @staticmethod
     def open_connection():
         """ Returns connection & cursor"""

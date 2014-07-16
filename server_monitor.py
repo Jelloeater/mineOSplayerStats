@@ -1,6 +1,7 @@
 #!/usr/bin/env python2.7
 """A python project for managing Minecraft servers hosted on MineOS (http://minecraft.codeemo.com)
 """
+from datetime import datetime
 
 import sys
 import os
@@ -107,6 +108,7 @@ def main():
         db_controller.db_helper().configure()
 
     db_controller.db_helper().test_db_setup()
+    # Calling constructor also loads settings, needed by db_access, so unless we want to refactor, it needs to stay.
 
     # Magic starts here
     if args.interactive:
@@ -186,15 +188,16 @@ class server_logger(mc):
     def check_server_status(self):
         if self.up and self.ping[3] > 0:  # Server is up and has players
             logging.info("Checking server {0}".format(self.server_name))
-            self.send_active_players()
+            self.log_active_players_to_db()
 
-    def send_active_players(self):
-        logging.debug(self.ping[3])  # number of player
+    def log_active_players_to_db(self):
+        """ Takes active players and logs list to db with timestamp """
+        logging.debug(self.ping[3])  # number of players
         logging.debug('PID: ' + str(self.screen_pid))
-        # self._command_stuff('/say lol')
 
         # FIXME Command not working, but attaching to screen
         # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
+        players_list =[]
 
         logging.debug(os.getcwd())
 
@@ -208,9 +211,11 @@ class server_logger(mc):
         status_code = process.wait()
         logging.debug('Status Code: ' + str(status_code))
 
-
-        # TODO Should send player list to db_helper.log_active_players_to_db
-
+        conn, cur = db_controller.db_access.open_connection()
+        cur.execute(
+            'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
+            (datetime.datetime.now(), self.ping[3], players_list, self.server_name))
+        db_controller.db_access.close_connection(conn, cur)
 
 
 
