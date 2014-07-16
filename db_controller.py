@@ -67,6 +67,7 @@ class db_helper(object, SettingsHelper):
                 connection.autocommit = True
                 cursor.execute('''CREATE DATABASE player_stats''')
                 connection.close()
+                logging.info('Created Database')
             except errors.ProgrammingError:
                 logging.warn('Database (Player_Stats) Already Exists')
         except pg8000.errors.InterfaceError:
@@ -86,7 +87,10 @@ class db_helper(object, SettingsHelper):
         CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
         conn, cur = db_access.open_connection()
-        cur.execute(DDL_Query)
+        try:
+            cur.execute(DDL_Query)
+        except pg8000.errors.ProgrammingError:
+            logging.warn('player_activity already exists')
         db_access.close_connection(conn, cur)
 
         # TODO Execute on first run
@@ -94,20 +98,29 @@ class db_helper(object, SettingsHelper):
     def test_db_setup(self):
         """ Gets run on startup """
         logging.debug(db_settings.__dict__)
-        logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
-
+        logging.debug('DB Password= ' +
+                      keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
         try:
+            logging.info('Testing Database Connection')
             conn, cur = db_access.open_connection()
             try:
                 cur.execute('SELECT * FROM player_activity')
-            except pg8000.errors.ProgrammingError:
-                logging.error('player_activity table does not exist')
-                db_helper.__create_table()
-            finally:
                 db_access.close_connection(conn, cur)
+                logging.info('Connection Successful')
+            except pg8000.errors.ProgrammingError:
+                logging.error('Cannot find player_activity table')
+                self.__create_table()
         except pg8000.errors.ProgrammingError:
-            logging.error('Database Does not exist')
+            logging.error('Cannot find player_stats database')
             self.__create_database()
+            self.__create_table()
+            try:
+                self.test_db_setup()  # Retry test_db_setup
+            except pg8000.errors.ProgrammingError:
+                logging.critical('Cannot recover from missing table & database')
+                logging.critical('Maybe try creating the database and table in Webmin, and running again?')
+                logging.critical('Sorry :( "I wasnt even supposed to be here today" -Dante')
+                sys.exit(1)
 
 
     @staticmethod
@@ -172,10 +185,9 @@ class db_access(object):
     def close_connection(connection, cursor):
         try:
             cursor.close()
-        except:
+        except pg8000.errors.ProgrammingError:
             connection.rollback()
             logging.warning('Rollback')
         else:
             connection.commit()
-
-    logging.debug('Closed DB Connection')
+        logging.debug('Closed DB Connection')

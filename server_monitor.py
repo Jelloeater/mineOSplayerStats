@@ -107,7 +107,6 @@ def main():
         db_controller.db_helper().configure()
 
     db_controller.db_helper().test_db_setup()
-    logging.error('hi')
 
     # Magic starts here
     if args.interactive:
