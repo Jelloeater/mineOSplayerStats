@@ -46,9 +46,6 @@ class SettingsHelper(db_settings):
         logging.debug("Settings Saved")
 
 
-
-
-
 class db_helper(object, SettingsHelper):
     """ Lets users send email messages """
     # db = postgresql.open(user = 'usename', database = 'datname', port = 5432)
@@ -102,34 +99,28 @@ class db_helper(object, SettingsHelper):
 
 
 
-        db_access.write_to_db('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
-                              'VALUES (%s, %s, %s,%s)'), (datetime.datetime.now(), 24, 'jelloeater', 'MagicFarm')
 
-        x = db_access.read_from_db('SELECT * FROM player_activity')
+        conn, cur = _db_access.open_connection()
+        cur.execute('SELECT * FROM player_activity')
+        x = cur.fetchall()
+
         print(x)
         logging.info(x)
+        _db_access.close_connection(conn, cur)
 
 
 
 
-        # connection = pg8000.DBAPI.connect(
-        # user='postgres', password='test', host='192.168.1.165', database='player_stats')
-        # cursor = connection.cursor()
-        #
-        #
-        # cursor.execute('INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") '
-        # 'VALUES (%s, %s, %s,%s)', (datetime.datetime.now(), 16, 'jelloeater', 'MagicFarm'))
-        # connection.commit()
-
-
-
-    def log_active_players_to_db(self, players_list):
+    @staticmethod
+    def log_active_players_to_db(players_list, server_name):
         """ Takes active players and logs list to db with timestamp """
-
-        pass
+        conn, cur = _db_access.open_connection()
+        cur.execute(
+            'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
+            (datetime.datetime.now(), len(players_list), players_list, server_name))
+        _db_access.close_connection(conn, cur)
 
     def configure(self):
-
         print("Enter database username (postgres) or press enter to skip")
         username = raw_input('({0})>'.format(self.USERNAME))
         if username:
@@ -165,9 +156,9 @@ class db_helper(object, SettingsHelper):
         sys.exit(0)
 
 
-class db_access(object):
+class _db_access(object):
     @staticmethod
-    def open():
+    def open_connection():
         """ Returns connection & cursor"""
         connection = pg8000.DBAPI.connect(
             user=db_settings.USERNAME,
@@ -179,7 +170,7 @@ class db_access(object):
         return connection, cursor
 
     @staticmethod
-    def close(connection, cursor):
+    def close_connection(connection, cursor):
         try:
             cursor.close()
         except:
@@ -187,27 +178,5 @@ class db_access(object):
             logging.warning('Rollback')
         else:
             connection.commit()
+
     logging.debug('Closed DB Connection')
-
-    @staticmethod
-    def write_to_db(query):
-        connection, cursor = db_access.open()
-        try:
-            try:
-                cursor.execute(query)
-            finally:
-                cursor.close()
-        except:
-            connection.rollback()
-            raise
-        else:
-            connection.commit()
-
-    @staticmethod
-    def read_from_db(query):
-        connection, cursor = db_access.open()
-        try:
-            cursor.execute(query)
-            return cursor.fetchall()
-        finally:
-            cursor.close()
