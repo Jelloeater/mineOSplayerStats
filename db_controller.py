@@ -56,7 +56,7 @@ class db_helper(object, SettingsHelper):
         self.loadSettings()
         self.PASSWORD = keyring.get_password(self.KEYRING_APP_ID, self.USERNAME)  # Loads password from secure storage
 
-    def _create_database(self):
+    def __create_database(self):
         """ Creates the database using template1 """
         try:
             try:
@@ -68,12 +68,14 @@ class db_helper(object, SettingsHelper):
                 cursor.execute('''CREATE DATABASE player_stats''')
                 connection.close()
             except errors.ProgrammingError:
-                logging.info('Database (Player_Stats) Already Exists')
+                logging.warn('Database (Player_Stats) Already Exists')
         except pg8000.errors.InterfaceError:
             logging.error("DB Connection Interface Error")
             print('Please check the user settings')
 
-    def __create_table(self):
+    @staticmethod
+    def __create_table():
+        logging.warning('Creating player_activity table')
         DDL_Query = '''
         CREATE TABLE player_activity (
         "Index" SERIAL NOT NULL,
@@ -83,42 +85,39 @@ class db_helper(object, SettingsHelper):
         "Server_Name" TEXT,
         CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
+        conn, cur = db_access.open_connection()
+        cur.execute(DDL_Query)
+        db_access.close_connection(conn, cur)
 
         # TODO Execute on first run
 
-    # noinspection PyMethodMayBeStatic
-    def test_login(self):
+    def test_db_setup(self):
         """ Gets run on startup """
         logging.debug(db_settings.__dict__)
-        logging.debug(datetime.datetime.today())
         logging.debug(keyring.get_password(SettingsHelper.KEYRING_APP_ID, db_settings.USERNAME))
 
-        # self._create_database()
-
-
-
-
-
-
-        conn, cur = _db_access.open_connection()
-        cur.execute('SELECT * FROM player_activity')
-        x = cur.fetchall()
-
-        print(x)
-        logging.info(x)
-        _db_access.close_connection(conn, cur)
-
-
+        try:
+            conn, cur = db_access.open_connection()
+            try:
+                cur.execute('SELECT * FROM player_activity')
+            except pg8000.errors.ProgrammingError:
+                logging.error('player_activity table does not exist')
+                db_helper.__create_table()
+            finally:
+                db_access.close_connection(conn, cur)
+        except pg8000.errors.ProgrammingError:
+            logging.error('Database Does not exist')
+            self.__create_database()
 
 
     @staticmethod
     def log_active_players_to_db(players_list, server_name):
         """ Takes active players and logs list to db with timestamp """
-        conn, cur = _db_access.open_connection()
+        conn, cur = db_access.open_connection()
         cur.execute(
             'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
             (datetime.datetime.now(), len(players_list), players_list, server_name))
-        _db_access.close_connection(conn, cur)
+        db_access.close_connection(conn, cur)
 
     def configure(self):
         print("Enter database username (postgres) or press enter to skip")
@@ -156,7 +155,7 @@ class db_helper(object, SettingsHelper):
         sys.exit(0)
 
 
-class _db_access(object):
+class db_access(object):
     @staticmethod
     def open_connection():
         """ Returns connection & cursor"""

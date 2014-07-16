@@ -83,11 +83,12 @@ def main():
                             level=logging.DEBUG)
         logging.debug(sys.path)
         logging.debug(args)
-        print("")
+        print('Debug Mode Enabled')
     else:
         logging.basicConfig(filename=LOG_FILENAME,
                             format="[%(asctime)s] [%(levelname)8s] --- %(message)s (%(filename)s:%(lineno)s)",
                             level=logging.WARNING)
+        print('Normal Boot')
 
     mode = modes(base_directory=args.base_directory, owner=args.owner, sleep_delay=args.delay)
     # Create new mode object for flow, I'll buy that :)
@@ -105,7 +106,8 @@ def main():
     if args.configure_db_settings:
         db_controller.db_helper().configure()
 
-    db_controller.db_helper().test_login()
+    db_controller.db_helper().test_db_setup()
+    logging.error('hi')
 
     # Magic starts here
     if args.interactive:
