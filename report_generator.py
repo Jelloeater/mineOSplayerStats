@@ -133,22 +133,41 @@ class modes(object):  # Uses new style classes
     @staticmethod
     def generate_report(number_of_days=7):
         conn, cur = db_controller.db_access().open_connection()
-        cur.execute(
-            'SELECT * FROM player_activity WHERE "Time_Stamp" >= (now() - INTERVAL s% days)', number_of_days)
+        query = '''SELECT * FROM player_activity WHERE "Time_Stamp" >= (now() - '{0} day'::INTERVAL);'''
+        cur.execute(query.format(number_of_days))
         data = cur.fetchall()
         db_controller.db_access.close_connection(conn, cur)
         logging.debug('DB dump')
         logging.debug(data)
 
+        # # TODO Make list of server names
+        server_names = ['lolWorld','lolWorld2']
+        server_data = []
+
+        # Individual Servers
+        for i in server_names:
+            minutes_used = len([x for x in data if x[4] == i])
+            server_data.append((i, minutes_used))
+
+        # Total Usage
         minutes_used = 0
-        # noinspection PyListCreation
-        msg = []  # Email Message Body
+        for i in server_data:
+            minutes_used += i[1]
+
+        msg = ['Server Usage This Week ']  # Email Message Body
+        for i in server_data:
+            msg.append(i[0])
+            msg.append(' has used ')
+            msg.append(str(i[1]))
+            msg.append(' minute(s) this week. ')
+
+
         # TODO Write email body info
 
         msg.append(' Report Generated @ ' + str(datetime.now()))
-        subj = "Server Usage Report - " + str(minutes_used) + 'Minutes'
-        logging.debug(subj)
-        logging.debug(msg)
+        subj = "Server Usage Report - " + str(minutes_used) + ' Minutes'
+        print(subj)
+        print(''.join(msg))
         # gmail().send(subject=subj, text=''.join(msg))
         # Create gmail obj
 
