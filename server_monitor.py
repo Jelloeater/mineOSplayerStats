@@ -109,7 +109,7 @@ def main():
     db_controller.db_helper().test_db_setup()
 
     # Magic starts here
-    if args.generate_report:
+    if args.interactive:
         mode.interactive()
     elif args.single:
         mode.single_server(args.single)  # Needs server name to start
