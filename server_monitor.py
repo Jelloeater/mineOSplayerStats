@@ -46,15 +46,15 @@ def main():
                                     help="Multi server watch mode",
                                     action="store_true")
 
-    email_group = parser.add_argument_group('E-mail Alert Mode')
-    email_group.add_argument("-c",
-                             "--configure_db_settings",
-                             help="Configure email alerts",
-                             action="store_true")
-    email_group.add_argument("-r",
-                             "--remove_password_store",
-                             help="Removes password stored in system keyring",
-                             action="store_true")
+    db_group = parser.add_argument_group('Database Settings')
+    db_group.add_argument("-c",
+                          "--configure_db_settings",
+                          help="Configure database settings",
+                          action="store_true")
+    db_group.add_argument("-r",
+                          "--remove_password_store",
+                          help="Removes password stored in system keyring",
+                          action="store_true")
 
     parser.add_argument("-d",
                         "--delay",
@@ -109,7 +109,7 @@ def main():
     db_controller.db_helper().test_db_setup()
 
     # Magic starts here
-    if args.interactive:
+    if args.generate_report:
         mode.interactive()
     elif args.single:
         mode.single_server(args.single)  # Needs server name to start

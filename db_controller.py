@@ -24,7 +24,7 @@ class db_settings():
 
 
 class SettingsHelper(db_settings):
-    SETTINGS_FILE_PATH = "settings.json"
+    SETTINGS_FILE_PATH = "database_settings.json"
     KEYRING_APP_ID = 'mineOSPlayerStats'
 
     @classmethod
