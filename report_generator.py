@@ -16,8 +16,6 @@ from keyring.errors import PasswordDeleteError
 
 sys.path.append('/usr/games/minecraft')  # Strange path issue, only appears when run from local console, not IDE
 
-
-
 __author__ = "Jesse S"
 __license__ = "GNU GPL v2.0"
 __version__ = "1.2"
@@ -32,28 +30,32 @@ def main():
                                                  " (http://github.com/jelloeater/mineOSplayerStats)",
                                      version=__version__,
                                      epilog="Please specify mode")
-    multi_server_group = parser.add_argument_group('Modes')
-    multi_server_group.add_argument("-g",
-                                    "--generate_report",
-                                    help="Generate Weekly Report",
-                                    action="store_true")
+    report_group = parser.add_argument_group('Modes')
+    report_group.add_argument("-g",
+                              "--generate_report",
+                              help="Generate Weekly Report",
+                              action="store_true")
+    report_group.add_argument("-s",
+                              "--report_scheduler",
+                              help="Automatically Generate Weekly Report",
+                              action="store_true")
 
     email_group = parser.add_argument_group('E-mail Config')
-    email_group.add_argument("-em",
+    email_group.add_argument("-e",
                              "--configure_email_settings",
                              help="Configure email alerts",
                              action="store_true")
-    email_group.add_argument("-emr",
+    email_group.add_argument("-r",
                              "--remove_email_password_store",
                              help="Removes password stored in system keyring",
                              action="store_true")
 
     db_group = parser.add_argument_group('Database Config')
-    db_group.add_argument("-db",
+    db_group.add_argument("-b",
                           "--configure_db_settings",
                           help="Configure database settings",
                           action="store_true")
-    db_group.add_argument("-dbr",
+    db_group.add_argument("-p",
                           "--remove_db_password_store",
                           help="Removes password stored in system keyring",
                           action="store_true")
@@ -100,12 +102,16 @@ def main():
     if args.configure_email_settings:
         gmail().configure()
 
-
     # Magic starts here
     if args.generate_report:
         db_controller.db_helper().test_db_setup()
         gmail().test_login()
         mode.generate_report()
+
+    if args.report_scheduler:
+        db_controller.db_helper().test_db_setup()
+        gmail().test_login()
+        mode.report_scheduler()
 
 
 class modes(object):  # Uses new style classes
@@ -119,16 +125,32 @@ class modes(object):  # Uses new style classes
             print("Bye Bye.")
             sys.exit(0)
 
-    def generate_report(self):
-        while True:
-            # noinspection PyListCreation
-            text = []
-            minutes_used = 0
+    def report_scheduler(self):
+        # TODO Interval should be in days or hours, NOT seconds
+        self.generate_report()
+        self.sleep()
 
-            text.append('Report Generated @ ' + str(datetime.now()))
-            gmail().send(subject="Server Usage Report - " + str(minutes_used) + 'Minutes', text=text)
-            # Create gmail obj
-            self.sleep()
+    @staticmethod
+    def generate_report(number_of_days=7):
+        conn, cur = db_controller.db_access().open_connection()
+        cur.execute(
+            'SELECT * FROM player_activity WHERE "Time_Stamp" >= (now() - INTERVAL s% days)', number_of_days)
+        data = cur.fetchall()
+        db_controller.db_access.close_connection(conn, cur)
+        logging.debug('DB dump')
+        logging.debug(data)
+
+        minutes_used = 0
+        # noinspection PyListCreation
+        msg = []  # Email Message Body
+        # TODO Write email body info
+
+        msg.append(' Report Generated @ ' + str(datetime.now()))
+        subj = "Server Usage Report - " + str(minutes_used) + 'Minutes'
+        logging.debug(subj)
+        logging.debug(msg)
+        # gmail().send(subject=subj, text=''.join(msg))
+        # Create gmail obj
 
 
 class gmailSettings():
@@ -208,6 +230,7 @@ class gmail(object, SettingsHelper):
 
         print("Clear alerts list? (yes/no)?")
         import distutils.util
+
         try:
             if distutils.util.strtobool(raw_input(">")):
                 gmailSettings.SEND_ALERT_TO = []  # Clear the list
