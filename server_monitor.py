@@ -18,7 +18,7 @@ from mineos import mc
 
 __author__ = "Jesse S"
 __license__ = "GNU GPL v2.0"
-__version__ = "1.0"
+__version__ = "1.2"
 __email__ = "jelloeater@gmail.com"
 
 LOG_FILENAME = "serverMonitor.log"
