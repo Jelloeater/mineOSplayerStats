@@ -59,6 +59,7 @@ class db_access(SettingsHelper, object):
             port=self.PORT,
             database=self.DATABASE)
         cursor = connection.cursor()
+        logging.debug('Opened DB Connection')
         return connection, cursor
 
     @staticmethod
@@ -106,10 +107,10 @@ class db_helper(db_access):
         DDL_Query = '''
         CREATE TABLE player_activity (
         "Index" SERIAL NOT NULL,
-        "Time_Stamp" TIMESTAMP(6) NOT NULL,
-        "Player_Count" INT4,
-        "Player_Names" TEXT,
-        "Server_Name" TEXT,
+        "Time_Stamp" TIMESTAMP(0) NOT NULL,
+        "Player_Count" INT4 NOT NULL,
+        "Player_Names" TEXT NOT NULL,
+        "Server_Name" TEXT NOT NULL,
         CONSTRAINT "player_activity_pkey"
         PRIMARY KEY ("Index"))'''
         conn, cur = self.open_connection()

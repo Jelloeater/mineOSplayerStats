@@ -2,6 +2,7 @@
 """A python project for managing Minecraft servers hosted on MineOS (http://minecraft.codeemo.com)
 """
 from datetime import datetime
+import json
 import sys
 import os
 import logging
@@ -83,12 +84,11 @@ def main():
                             level=logging.DEBUG)
         logging.debug(sys.path)
         logging.debug(args)
-        print('Debug Mode Enabled')
+        logging.debug('Debug Mode Enabled')
     else:
         logging.basicConfig(filename=LOG_FILENAME,
                             format="[%(asctime)s] [%(levelname)8s] --- %(message)s (%(filename)s:%(lineno)s)",
                             level=logging.WARNING)
-        print('Normal Boot')
 
     mode = modes(base_directory=args.base_directory, owner=args.owner, sleep_delay=args.delay)
     # Create new mode object for flow, I'll buy that :)
@@ -185,29 +185,29 @@ class modes(object):  # Uses new style classes
 class server_logger(mc):
     def check_server_status(self):
         logging.info("Checking server {0}".format(self.server_name))
-        if self.up and self.ping[3] > 0:  # Server is up and has players
+        if self.up and int(self.ping[3]) > 0:  # Server is up and has players
             self.log_active_players_to_db()
 
     def log_active_players_to_db(self):
         """ Takes active players and logs list to db with timestamp """
-        logging.debug(self.ping[3])  # number of players
+        logging.debug('# of players: ' + str(self.ping[3]))  # number of players
         logging.debug('PID: ' + str(self.screen_pid))
 
-        # FIXME Command not working, but attaching to screen
-        # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
+        players_list = json.dumps([])
+        # players_list = json.dumps(self.get_player_list())
 
-        players_list = self.get_player_list()
-
-        # conn, cur = db_controller.db_access().open_connection()
-        # cur.execute(
-        #     'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
-        #     (datetime.datetime.now(), self.ping[3], players_list, self.server_name))
-        # db_controller.db_access.close_connection(conn, cur)
+        conn, cur = db_controller.db_access().open_connection()
+        cur.execute(
+            'INSERT INTO player_activity ("Time_Stamp","Player_Count","Player_Names","Server_Name") VALUES (%s, %s, %s,%s)',
+            (datetime.now(), self.ping[3], players_list, self.server_name))
+        db_controller.db_access.close_connection(conn, cur)
 
     def get_player_list(self):
         players_list = []
-        logging.debug(os.getcwd())
 
+        logging.debug(os.getcwd())
+        # FIXME Command not working, but attaching to screen
+        # See http://www.cyberciti.biz/faq/python-run-external-command-and-get-output/
         cmd = 'screen -d -m -r ' + str(self.screen_pid) + ' "/list"'  # Breaks screen on exit, stuck in loop
         # cmd = 'ls'
         logging.debug(subprocess.check_output(cmd))
