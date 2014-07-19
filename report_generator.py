@@ -140,8 +140,8 @@ class modes(object):  # Uses new style classes
         logging.debug('DB dump')
         logging.debug(data)
 
-        # # TODO Make list of server names
-        server_names = ['lolWorld','lolWorld2']
+        # Generate list of server names from query
+        server_names = set([x[4] for x in data])
         server_data = []
 
         # Individual Servers
@@ -149,26 +149,22 @@ class modes(object):  # Uses new style classes
             minutes_used = len([x for x in data if x[4] == i])
             server_data.append((i, minutes_used))
 
-        # Total Usage
+        # Total Usage for period
         minutes_used = 0
         for i in server_data:
             minutes_used += i[1]
 
-        msg = ['Server Usage This Week ']  # Email Message Body
+        msg = ['During the last ' + str(number_of_days) + ' days: \n\n']  # Email Message Body
         for i in server_data:
             msg.append(i[0])
             msg.append(' has used ')
             msg.append(str(i[1]))
-            msg.append(' minute(s) this week. ')
+            msg.append(' minute(s). \n')
+        msg.append('\nA total of ' + str(minutes_used) + ' minute(s) were used.')
 
-
-        # TODO Write email body info
-
-        msg.append(' Report Generated @ ' + str(datetime.now()))
-        subj = "Server Usage Report - " + str(minutes_used) + ' Minutes'
-        print(subj)
-        print(''.join(msg))
-        # gmail().send(subject=subj, text=''.join(msg))
+        msg.append('\n\nReport Generated @ ' + str(datetime.now()))
+        subj = "Minecraft Server Usage Report"
+        gmail().send(subject=subj, text=''.join(msg))
         # Create gmail obj
 
 
