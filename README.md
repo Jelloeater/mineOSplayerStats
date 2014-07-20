@@ -4,6 +4,7 @@ A small application track how many players are on a Mincraft server(s) running o
 ## Setup
 Configure a PostgreSQL Server with remote DB access. 
 For ease of use (on a secure network), you should use the root postgreSQL account (postgres)
+Also don't forget to configure e-mail for the report generator.
 
 ## Usage
 For help just run with -h
@@ -18,4 +19,4 @@ See Licence file
 Python 2.7
 MineOS (http://minecraft.codeemo.com)
 Keyring (https://bitbucket.org/kang/python-keyring-lib) (included)
-Py-postgresql (http://python.projects.pgfoundry.org/) (included)
+pg8000 (http://pybrary.net/pg8000/) (included)
